@@ -581,12 +581,18 @@ export class BarCard extends LitElement {
   }
 
   private _handleClick(e: MouseEvent) {
+    console.warn('_handleClick');
     const target = e.currentTarget as HTMLElement;
-    
+
     const index = Number(target.dataset['index']);
     const config = this._configArray[index];
 
-    if (!config.tap_action?.service) {
+    const action = config.tap_action as {
+      service?: string,
+      data?: unknown
+    };
+    if (!action?.service) {
+      console.warn('_handleClick: no action defined');
       return;
     }
 
@@ -600,14 +606,15 @@ export class BarCard extends LitElement {
     const max = Number(this._resolveTemplate('' + config.max));
     const value = min + percent * (max - min);
 
-    const [domain, service] = config.tap_action.service.split('.');
+    const [domain, service] = action.service.split('.');
 
     const data = { entity_id: config.entity } as Record<string, unknown>;
-    for (const [key, expr] of Object.entries(config.tap_action.data)) {
+    for (const [key, expr] of Object.entries(action.data || {})) {
       data[key] = this._resolveTemplate(expr as string, { value: value });
     }
 
-    this.hass.callService(domain, service, data);
+    console.warn('_handleClick', { domain, service, data });
+    this.hass?.callService(domain, service, data);
   }
 
   private _resolveTemplate(value: string | number, context: Record<string, unknown> = {}): string {
@@ -643,7 +650,7 @@ export class BarCard extends LitElement {
             ${value};
           }`);
         return fn(this.hass, ...Object.values(context));
-      } catch (e) {
+      } catch {
         return 'unavailable';
       }
     }
