@@ -618,6 +618,8 @@ export class BarCard extends LitElement {
   }
 
   private _resolveTemplate(value: string | number, context: Record<string, unknown> = {}): string {
+    console.warn('_resolveTemplate', value);
+
     if (typeof value == 'number') {
       return '' + value;
     }
