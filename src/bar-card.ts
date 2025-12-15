@@ -581,7 +581,6 @@ export class BarCard extends LitElement {
   }
 
   private _handleClick(e: MouseEvent) {
-    console.warn('_handleClick');
     const target = e.currentTarget as HTMLElement;
 
     const index = Number(target.dataset['index']);
@@ -592,7 +591,6 @@ export class BarCard extends LitElement {
       data?: unknown
     };
     if (!action?.service) {
-      console.warn('_handleClick: no action defined');
       return;
     }
 
@@ -613,13 +611,10 @@ export class BarCard extends LitElement {
       data[key] = this._resolveTemplate(expr as string, { value: value });
     }
 
-    console.warn('_handleClick', { domain, service, data });
     this.hass?.callService(domain, service, data);
   }
 
   private _resolveTemplate(value: string | number, context: Record<string, unknown> = {}): string {
-    console.warn('_resolveTemplate', value);
-
     if (typeof value == 'number') {
       return '' + value;
     }
