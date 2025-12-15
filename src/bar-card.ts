@@ -619,7 +619,7 @@ export class BarCard extends LitElement {
     const numberValue = Number(value);
 
     value = this._resolveTemplate(value);
-
+    
     if (value == 'unavailable') return 0;
     if (isNaN(numberValue)) return 100;
 
