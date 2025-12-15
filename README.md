@@ -37,13 +37,13 @@ This is a fork from [custom-cards/bar-card](https://github.com/custom-cards/bar-
 | height | string | 40px | Defines the height of the bar.
 | icon | string | icon | Defines the icon to be displayed.
 | limit_value | boolean | false | Limits value displayed to `min` and `max` value.
-| max | number or string | 100 | Defines maximum value of the bar using a number or a entity.
-| min | number or string | 0 | Defines minimum value of the bar using a number or a entity.
+| max | number or string | 100 | Defines maximum value of the bar using a number, an entity, or a javascript template.
+| min | number or string | 0 | Defines minimum value of the bar using a number, an entity, or a javascript template.
 | name | string | none | Defines custom entity name.
 | positions | object | none | Defines the positions of the card elements. See [Positions Options](#positions-options).
 | severity | object | none | A list of severity values. See [Severity Options](#severity-options).
 | tap_action | object | none | See [home assistant documentation](https://www.home-assistant.io/lovelace/actions/).
-| target | number | none | Defines and enables target marker value.
+| target | number or string | none | Defines and enables target marker value, using a simple value or a javascript template.
 | title | string | none | Adds title header to the card.
 | unit_of_measurement | string | attribute | Defines the unit of measurement to be displayed.
 | width | string | 100% | Defines the width of the bar.
@@ -250,6 +250,15 @@ style: |-
   }
 title: Custom CSS Layout
 type: 'custom:bar-card'
+```
+
+## JS Templates
+
+```yaml
+entity: sensor.example
+type: 'custom:bar-card'
+min: "${ states[sensor.example].attributes.min }"
+max: "${ states[sensor.example].attributes.max }"
 ```
 
 ## Credits
