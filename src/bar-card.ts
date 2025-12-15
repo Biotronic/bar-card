@@ -87,7 +87,7 @@ export class BarCard extends LitElement {
       // Get the config for this specific bar from the target element's dataset
       const configIndex = parseInt((ev.target as HTMLElement).dataset.configIndex || '0');
       const config = this._configArray[configIndex] || this._config;
-      
+
       handleAction(ev.target as HTMLElement, this._hass, config, ev.detail.action);
     }
   }
@@ -165,7 +165,7 @@ export class BarCard extends LitElement {
         // If limit_value is defined limit the displayed value to min and max.
         let max = getMaxMinBasedOnType(this._hass, config.max);
         let min = getMaxMinBasedOnType(this._hass, config.min);
-        
+
         // Ensure max > min relationship; provide fallbacks if needed
         if (max <= min) {
           // If both are 0 (invalid), use default range
@@ -420,13 +420,13 @@ export class BarCard extends LitElement {
               style="margin: ${backgroundMargin}; height: ${barHeight}${typeof barHeight === 'number' ? 'px' : ''}; ${barWidth}"
               data-config-index="${index}"
               ${actionHandler(this, {
-                hasDoubleClick: config.double_tap_action !== undefined,
-              })}
+          hasDoubleClick: config.double_tap_action !== undefined,
+        })}
               @action=${this._handleAction}
             >
               <bar-card-backgroundbar style="--bar-color: ${barColor};"></bar-card-backgroundbar>
               ${config.animation.state === 'on'
-                ? html`
+            ? html`
                     <bar-card-animationbar
                       style="animation: ${animation} ${config.animation.speed}s infinite ease-out;
                              --bar-percent: ${animationPercent}%;
@@ -435,14 +435,14 @@ export class BarCard extends LitElement {
                       class="${animationClass}"
                     ></bar-card-animationbar>
                   `
-                : ''}
+            : ''}
               <bar-card-currentbar
                 style="--bar-color: ${barColor};
                        --bar-percent: ${barPercent}%;
                        --bar-direction: ${barDirection}"
               ></bar-card-currentbar>
               ${config.target
-                ? html`
+            ? html`
                     <bar-card-targetbar
                       style="--bar-color: ${barColor};
                              --bar-percent: ${targetStartPercent}%;
@@ -456,11 +456,11 @@ export class BarCard extends LitElement {
                              ${markerStyle}"
                     ></bar-card-markerbar>
                   `
-                : ''}
+            : ''}
               <bar-card-contentbar
                 class="${config.direction === 'up'
-                  ? 'contentbar-direction-up'
-                  : 'contentbar-direction-right'}"
+            ? 'contentbar-direction-up'
+            : 'contentbar-direction-right'}"
               >
                 ${iconInside} ${indicatorInside} ${nameInside} ${minMaxInside} ${valueInside}
               </bar-card-contentbar>
@@ -583,9 +583,41 @@ export class BarCard extends LitElement {
     const config = this._configArray[index];
     const numberValue = Number(value);
 
+    if (value.trim().match(/^\$\{.*\}$/)) {
+      value = value.trim().replace(/^\$\{\s*(.*?)\s*\}$/, '$1');
+      try {
+        // Simple template:
+        // min: "${states[sensor.foo].state}"
+        const fn = new Function('hass', `
+          with (hass.states) {
+            return ${value};
+          }`);
+        value = fn(this.hass);
+      } catch {
+        // More complicated template:
+        // min: >
+        //   ${
+        //     if (foo) {
+        //       return 42;
+        //     } else {
+        //       return 69;
+        //     }
+        //   }
+        try {
+          const fn = new Function('hass', `
+            with (hass.states) {
+              ${value};
+            }`);
+          value = fn(this.hass);
+        } catch (e) {
+          value = 'unavailable';
+        }
+      }
+    }
+
     if (value == 'unavailable') return 0;
     if (isNaN(numberValue)) return 100;
-    
+
     // Prevent division by zero when max equals min
     if (max === min) {
       return numberValue >= max ? 100 : 0;
