@@ -616,10 +616,10 @@ export class BarCard extends LitElement {
 
   private _computePercent(value: string, index: number, max: number, min: number): number {
     const config = this._configArray[index];
-    const numberValue = Number(value);
 
     value = this._resolveTemplate(value);
-
+    const numberValue = Number(value);
+    
     if (value == 'unavailable') return 0;
     if (isNaN(numberValue)) return 100;
 
