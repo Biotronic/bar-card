@@ -92,7 +92,6 @@ export class BarCard extends LitElement {
     }
   }
 
-
   protected render(): TemplateResult | void {
     if (!this._config || !this._hass) {
       return html``;
@@ -461,6 +460,8 @@ export class BarCard extends LitElement {
                 class="${config.direction === 'up'
             ? 'contentbar-direction-up'
             : 'contentbar-direction-right'}"
+                data-index="${index}"
+                @click=${this._handleClick}
               >
                 ${iconInside} ${indicatorInside} ${nameInside} ${minMaxInside} ${valueInside}
               </bar-card-contentbar>
@@ -579,7 +580,41 @@ export class BarCard extends LitElement {
     return icon;
   }
 
-  private _resolveTemplate(value: string): string {
+  private _handleClick(e: MouseEvent) {
+    const target = e.currentTarget as HTMLElement;
+    
+    const index = Number(target.dataset['index']);
+    const config = this._configArray[index];
+
+    if (!config.tap_action?.service) {
+      return;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const percent = Math.min(Math.max(
+      0,
+      (e.clientX - rect.left) / rect.width),
+      1
+    );
+    const min = Number(this._resolveTemplate('' + config.min));
+    const max = Number(this._resolveTemplate('' + config.max));
+    const value = min + percent * (max - min);
+
+    const [domain, service] = config.tap_action.service.split('.');
+
+    const data = { entity_id: config.entity } as Record<string, unknown>;
+    for (const [key, expr] of Object.entries(config.tap_action.data)) {
+      data[key] = this._resolveTemplate(expr as string, { value: value });
+    }
+
+    this.hass.callService(domain, service, data);
+  }
+
+  private _resolveTemplate(value: string | number, context: Record<string, unknown> = {}): string {
+    if (typeof value == 'number') {
+      return '' + value;
+    }
+
     if (!value.trim().match(/^\$\{.*\}$/)) {
       return value;
     }
@@ -587,11 +622,11 @@ export class BarCard extends LitElement {
     try {
       // Simple template:
       // min: "${states[sensor.foo].state}"
-      const fn = new Function('hass', `
+      const fn = new Function('hass', ...Object.keys(context), `
         with (hass.states) {
           return ${value};
         }`);
-      return fn(this.hass);
+      return fn(this.hass, ...Object.values(context));
     } catch {
       // More complicated template:
       // min: >
@@ -603,11 +638,11 @@ export class BarCard extends LitElement {
       //     }
       //   }
       try {
-        const fn = new Function('hass', `
+        const fn = new Function('hass', ...Object.keys(context), `
           with (hass.states) {
             ${value};
           }`);
-        return fn(this.hass);
+        return fn(this.hass, ...Object.values(context));
       } catch (e) {
         return 'unavailable';
       }
@@ -619,7 +654,7 @@ export class BarCard extends LitElement {
 
     value = this._resolveTemplate(value);
     const numberValue = Number(value);
-    
+
     if (value == 'unavailable') return 0;
     if (isNaN(numberValue)) return 100;
 
