@@ -622,6 +622,10 @@ export class BarCard extends LitElement {
       return '' + value;
     }
 
+    if (value === undefined || value === null) {
+      value = '';
+    }
+
     if (!value.trim().match(/^\$\{.*\}$/)) {
       return value;
     }
